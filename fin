@@ -1342,9 +1342,9 @@ _connect_project_network ()
 	local network="${COMPOSE_PROJECT_NAME_SAFE}_default"
 	local containers=$(docker ps -aq --no-trunc --filter "label=com.docker.compose.project=${project}")
 
-	# for container in ${containers}; do
-	# 		docker network connect ${network} ${container} &>/dev/null
-	# done
+	for container in ${containers}; do
+			docker network connect ${network} ${container} &>/dev/null
+	done
 }
 
 # Disconnects all containers, connected to project network
@@ -1353,9 +1353,9 @@ _disconnect_project_network ()
 	local network=${1}
 	local containers=$(docker ps -aq --no-trunc --filter "network=${network}")
 
-	# for container in ${containers}; do
-	# 	docker network disconnect -f "$network" ${container} &>/dev/null
-	# done
+	for container in ${containers}; do
+		docker network disconnect -f "$network" ${container} &>/dev/null
+	done
 }
 
 _start_containers ()
@@ -1375,7 +1375,7 @@ _start_containers ()
 
 	# Workaround for Docker Compose v2
 	# We have to manually reconnect project containers to project network
-	_connect_project_network
+	# _connect_project_network
 
 	# TODO: Workaround. Handle this case in docksal/vhost-proxy.
 	# When project stack is started, but vhost-proxy is not yet connected to the stack network, vhost-proxy config breaks.
@@ -1438,15 +1438,15 @@ _stop_containers ()
 	# it does not reconnect project containers to the project network.
 	# If we delete the project network, we have to then manually reconnect project containers to the project network.
 	# See _connect_project_network
-	if [[ $1 == '-a' ]] || [[ $1 == '--all' ]] || [[ -z $1 ]]; then
-		echo-green "Disconnecting project network..."
-		# There is a limit of about 30 docker networks per host, so unused (stopped projects') networks should be dropped.
-		# The project network will be automatically recreated by docker-compose up.
-		local network="${COMPOSE_PROJECT_NAME_SAFE}_default"
-		# _disconnect_project_network "${network}"
+	# if [[ $1 == '-a' ]] || [[ $1 == '--all' ]] || [[ -z $1 ]]; then
+	# 	echo-green "Disconnecting project network..."
+	# 	# There is a limit of about 30 docker networks per host, so unused (stopped projects') networks should be dropped.
+	# 	# The project network will be automatically recreated by docker-compose up.
+	# 	local network="${COMPOSE_PROJECT_NAME_SAFE}_default"
+	# 	_disconnect_project_network "${network}"
 
-		docker network rm "${network}" &>/dev/null || true
-	fi
+	# 	docker network rm "${network}" &>/dev/null || true
+	# fi
 
 	echo-green "Stopping services..."
 	docker-compose stop "$@"
@@ -1466,8 +1466,8 @@ _remove_containers ()
 
 		# Disconnect all containers from the project network, otherwise network will not be removed.
 		# Figure out the default project network name
-		local network="${COMPOSE_PROJECT_NAME_SAFE}_default"
-		_disconnect_project_network "${network}"
+		# local network="${COMPOSE_PROJECT_NAME_SAFE}_default"
+		# _disconnect_project_network "${network}"
 
 		# Taking the whole docker-compose project down (this removes containers, volumes, and networks)
 		docker-compose down --volumes --remove-orphans
